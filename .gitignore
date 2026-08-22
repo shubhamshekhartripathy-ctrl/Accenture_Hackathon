@@ -1,0 +1,10 @@
+*.db
+*.db-journal
+__pycache__/
+.venv/
+node_modules/
+dist/
+.env
+backend/.env
+backend/reasonflow.db
+frontend/.env

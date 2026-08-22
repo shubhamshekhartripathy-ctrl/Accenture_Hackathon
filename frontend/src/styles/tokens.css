@@ -1,0 +1,100 @@
+/*
+  ReasonFlow design tokens — the single canonical source of visual truth.
+  Deep-ink enterprise theme: near-black canvas, hairline borders, restrained
+  typography, ONE signal-gold accent, semantic pass/warn/fail, tabular
+  monospaced numerals. No gradients, glow, neon, or glassmorphism.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Canvas & surfaces */
+  --rf-ink-950: #0b0e14;
+  --rf-ink-900: #10141d;
+  --rf-ink-850: #151a25;
+  --rf-ink-800: #1b2130;
+
+  /* Hairlines */
+  --rf-line: rgba(231, 234, 240, 0.09);
+  --rf-line-strong: rgba(231, 234, 240, 0.18);
+
+  /* Typography */
+  --rf-text-primary: #e7eaf0;
+  --rf-text-secondary: #b7bfcd;
+  --rf-text-muted: #8b94a7;
+  --rf-text-inverse: #0b0e14;
+  --rf-font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --rf-font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+
+  /* Accent + semantics */
+  --rf-gold: #e8b84b;
+  --rf-gold-soft: rgba(232, 184, 75, 0.14);
+  --rf-pass: #3ecf8e;
+  --rf-warn: #f5b83d;
+  --rf-fail: #f2545b;
+  --rf-info: #6aa5e8;
+
+  /* Shape & motion */
+  --rf-radius: 6px;
+  --rf-radius-lg: 10px;
+  --rf-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+  --rf-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --rf-dur-fast: 140ms;
+  --rf-dur-slow: 320ms;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--rf-ink-950);
+  color: var(--rf-text-primary);
+  font-family: var(--rf-font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numerals: tabular figures, monospaced — every number aligns */
+.num {
+  font-family: var(--rf-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Motion communicates real state only; respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: var(--rf-gold-soft);
+}
+
+/* Focus visibility for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--rf-gold);
+  outline-offset: 1px;
+}
+
+/* Scrollbars — restrained */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--rf-ink-800);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

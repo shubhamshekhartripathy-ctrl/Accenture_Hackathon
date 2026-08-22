@@ -1,0 +1,67 @@
+# ReasonFlow — canonical startup (PostgreSQL 16 + pgvector, Redis, API, UI).
+#
+#   docker compose up --build
+#     → API   http://localhost:8000  (docs at /docs)
+#     → UI    http://localhost:5173
+#
+# The API entrypoint runs `alembic upgrade head` (migrations are the canonical
+# schema mechanism) before uvicorn; seeding is idempotent on first boot.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: reasonflow
+      POSTGRES_PASSWORD: reasonflow
+      POSTGRES_DB: reasonflow
+    volumes:
+      - rf_pgdata:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reasonflow -d reasonflow"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    command: sh -c "alembic -c /srv/app/alembic.ini upgrade head && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      ENV: docker
+      DATABASE_URL: postgresql+psycopg://reasonflow:reasonflow@postgres:5432/reasonflow
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${APP_SECRET_KEY:-change-me-in-production}
+      DEMO_MODE: "1"
+      SEED_ON_BOOT: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ui:
+    image: node:20-alpine
+    working_dir: /ui
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    volumes:
+      - ./frontend:/ui
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  rf_pgdata:

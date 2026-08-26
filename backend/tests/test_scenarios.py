@@ -72,11 +72,11 @@ def test_scenario3_cold_start_startable(client, auth_headers):
     assert ws["scenario"]["primary_kpi"] == "millet_noodles_revenue"
 
 
-def test_supply_chain_cannot_start_scenario(client, auth_headers):
+def test_supply_chain_can_start_scenario(client, auth_headers):
     resp = client.post(
         "/api/v1/scenarios/apex_revenue_decline_ne/start", headers=auth_headers("supply_chain")
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
 
 def test_start_audited(client, auth_headers):

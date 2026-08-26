@@ -81,7 +81,7 @@ export function ProposalsPanel() {
   const canReview = user && ["KPI_OWNER", "ADMIN"].includes(user.role);
   const review = async (p: Proposal, decision: string) => {
     setErr(null);
-    try { await api.post(`/memory/proposals/${p.id}/review`, { decision, note: notes[p.id] ?? "" }); load(); }
+    try { await api.post(`/memory/proposals/${p.id}/review`, { decision, note: notes[p.id] ?? "" }); load(); window.dispatchEvent(new Event("demo-refresh")); }
     catch (e) { setErr(e instanceof ApiError ? e.message : "Review failed"); }
   };
   return (

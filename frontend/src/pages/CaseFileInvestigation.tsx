@@ -22,7 +22,7 @@ export function CaseFileInvestigation({ kpiId }: { kpiId: string }) {
   const [live, setLive] = React.useState<string[]>([]);
   const [sel, setSel] = React.useState<string | null>(null); // selected hypothesis id
   const user = getSession()?.user;
-  const canRun = user && ["ANALYST", "ADMIN"].includes(user.role);
+  const canRun = user && ["KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN"].includes(user.role);
 
   const load = React.useCallback(() => {
     setError(null); setNone(false);
@@ -61,7 +61,7 @@ export function CaseFileInvestigation({ kpiId }: { kpiId: string }) {
     return (
       <Card title="Investigation" subtitle="Contract → Reconcile → Detect → Triage → Decompose → Hypotheses → Evidence → Rank">
         <Banner tone="info" title="No investigation yet">
-          {canRun ? "Start the pipeline: sources reconcile, the movement decomposes, competing hypotheses gather evidence and rank — deterministically." : "An analyst or admin starts investigations; every stage and method is visible afterwards."}
+          {canRun ? "Start the pipeline: sources reconcile, the movement decomposes, competing hypotheses gather evidence and rank — deterministically." : "Any authenticated user can start investigations; every stage and method is visible afterwards."}
         </Banner>
         {canRun && (
           <button onClick={start} disabled={busy} className="mt-3 rounded border border-gold/60 bg-gold-soft px-3 py-1.5 text-[12.5px] font-medium text-gold transition hover:bg-gold/20 disabled:opacity-50">

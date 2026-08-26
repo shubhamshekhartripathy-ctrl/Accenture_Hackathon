@@ -8,6 +8,7 @@ POST /demo/toggle-llm              — DEMO_MODE only; flips every route to the
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -20,13 +21,28 @@ from ..models.aigov import AiPolicy, AiRouteLog
 from ..models.org import User
 from ..models.telemetry import StageTelemetry
 from ..security.deps import require_roles
+from ..security.jwt_auth import decode_token
 from ..services import telemetry as telemetry_service
 from ..services.audit import record as audit
 from ..services.llm import gateway
 
 router = APIRouter(tags=["ai-governance"])
 _read_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
-_demo_guard = require_roles("ADMIN", "EXECUTIVE")
+_demo_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
+_reset_bearer = HTTPBearer(auto_error=False)
+
+
+def _demo_reset_actor(credentials: HTTPAuthorizationCredentials | None = Depends(_reset_bearer)) -> dict:
+    """Authorize reset without opening a DB session that would block drop_all()."""
+    if credentials is None:
+        raise AppError("UNAUTHORIZED", "Missing bearer token", 401)
+    payload = decode_token(credentials.credentials)
+    if payload.get("typ") != "access":
+        raise AppError("UNAUTHORIZED", "Wrong token type", 401)
+    role = payload.get("role")
+    if role not in {"KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN"}:
+        raise AppError("FORBIDDEN", f"Role {role} is not permitted for this operation", 403)
+    return payload
 
 
 @router.get("/transparency")
@@ -132,9 +148,9 @@ def demo_fast_forward(body: FFIn, request: Request,
 
 
 @router.post("/demo/reset")
-def demo_reset(request: Request, user: User = Depends(_demo_guard), db: Session = Depends(get_db)):
+def demo_reset(request: Request, actor: dict = Depends(_demo_reset_actor)):
     from ..services import demo as demo_service
-    return ok(request, demo_service.reset(db, user.id, user.role))
+    return ok(request, demo_service.reset(actor["sub"], actor["role"]))
 
 
 class ToggleIn(BaseModel):

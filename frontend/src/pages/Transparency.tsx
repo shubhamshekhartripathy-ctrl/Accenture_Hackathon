@@ -36,7 +36,7 @@ export function Transparency() {
 
   const toggle = async (enabled: boolean) => {
     setBusy(true);
-    try { await api.post("/demo/toggle-llm", { enabled }); load(); } finally { setBusy(false); }
+    try { await api.post("/demo/toggle-llm", { enabled }); load(); window.dispatchEvent(new Event("demo-refresh")); } finally { setBusy(false); }
   };
 
   if (err) return <Banner tone="fail" title="Ledger unavailable">{err}</Banner>;

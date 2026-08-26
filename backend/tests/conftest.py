@@ -44,10 +44,14 @@ def _configure_database() -> None:
     os.environ["SECRET_KEY"] = "test-secret-key"
     os.environ["SEED_ON_BOOT"] = "1"
 
+    import sys
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
     import app.config as config_module
 
     config_module.settings = config_module.Settings(
         database_url=url, secret_key="test-secret-key", seed_on_boot=True,
+        redis_url=None,  # tests verify degraded-state reporting; Redis must be absent
         login_rate_per_minute=10_000,  # the limiter itself is tested in test_auth_security
     )
 
@@ -75,6 +79,16 @@ def seeded_database():
 
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    # Stamp alembic_version so app lifespan's run_migrations() is a no-op
+    from alembic.config import Config
+    from alembic import command as alembic_command
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    alembic_cfg_path = os.path.join(base_dir, "alembic.ini")
+    if os.path.exists(alembic_cfg_path):
+        alembic_cfg = Config(alembic_cfg_path)
+        alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "alembic"))
+        alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
+        alembic_command.stamp(alembic_cfg, "head")
     run_seed()
     yield
 
@@ -122,3 +136,4 @@ def auth_headers(login):
         return {"Authorization": f"Bearer {data['access_token']}"}
 
     return _headers
+

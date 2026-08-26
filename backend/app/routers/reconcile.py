@@ -24,7 +24,7 @@ from ..security.deps import get_current_user, require_roles
 router = APIRouter(tags=["reconcile-queue-investigations"])
 
 _read_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
-_run_guard = require_roles("ANALYST", "ADMIN")
+_run_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
 _resolve_guard = require_roles("KPI_OWNER", "ADMIN")
 
 

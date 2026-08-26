@@ -82,7 +82,7 @@ def fast_forward(db: Session, organization_id: str, actor_user_id: str, actor_ro
             "note": "time moved — freshness decays, monitoring windows advance"}
 
 
-def reset(db: Session, actor_user_id: str, actor_role: str) -> dict:
+def reset(actor_user_id: str, actor_role: str) -> dict:
     """Wipe + reseed. The audit of the reset itself is written after seeding."""
     _require_demo_mode()
     from ..db import Base, engine
@@ -93,7 +93,6 @@ def reset(db: Session, actor_user_id: str, actor_role: str) -> dict:
     _state["offset_days"] = 0.0
     out = run_seed()
     with_next = dict(out)
-    db.rollback()  # the calling session's connection points at dropped tables
     from ..db import SessionLocal
     s2 = SessionLocal()
     try:

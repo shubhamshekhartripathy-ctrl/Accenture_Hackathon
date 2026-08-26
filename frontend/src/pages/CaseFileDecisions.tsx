@@ -22,30 +22,20 @@ export function CaseFileDecisions({ kpiId }: { kpiId: string }) {
   if (!inv) return null;
   return (
     <div className="space-y-4">
-      <OptionsPanel inv={inv} kpiId={kpiId} />
+      <OptionsPanel inv={inv} />
     </div>
   );
 }
 
-function OptionsPanel({ inv, kpiId }: { inv: Investigation; kpiId: string }) {
+function OptionsPanel({ inv }: { inv: Investigation }) {
   const user = getSession()?.user;
   const [busy, setBusy] = React.useState<string | null>(null);
-  const load2 = React.useCallback(() => {
-    api.get<Investigation[]>(`/investigations?kpi_id=${kpiId}`).catch(() => undefined);
-  }, [kpiId]);
   const [err, setErr] = React.useState<string | null>(null);
-  const [reload, setReload] = React.useState(0);
   const [invState, setInvState] = React.useState(inv);
-  React.useEffect(() => { setInvState(inv); }, [inv, reload]);
+  React.useEffect(() => { setInvState(inv); }, [inv]);
   const options = invState.options ?? [];
   const collisions = (invState as Investigation & { collisions?: Collision[] }).collisions ?? [];
-  const [coll, setColl] = React.useState<Collision[]>(collisions);
-  const refreshCollisions = async () => {
-    try {
-      const d = await api.get<{ options: DecisionOption[]; collisions: Collision[] }>(`/investigations/${invState.id}/decisions`);
-      setColl(d.collisions ?? []);
-    } catch { /* surfaced elsewhere */ }
-  };
+  const coll = collisions;
   if (options.length === 0 && invState.certainty_state === "ABSTAIN") return null;
 
   const decide = async (opt: DecisionOption, decision: string) => {
@@ -57,10 +47,7 @@ function OptionsPanel({ inv, kpiId }: { inv: Investigation; kpiId: string }) {
     }
     try {
       await api.post(`/investigations/${invState.id}/decisions/${opt.id}`, { decision, override_reason: reason });
-      const rows = await api.get<Investigation[]>(`/investigations?kpi_id=${kpiId}`);
-      const mine = rows.find((r) => r.id === invState.id) ?? rows[0];
-      if (mine) setInvState(mine);
-      setReload((n) => n + 1);
+      window.dispatchEvent(new Event("demo-refresh"));
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : "Decision failed");
     } finally { setBusy(null); }
@@ -83,7 +70,7 @@ function OptionsPanel({ inv, kpiId }: { inv: Investigation; kpiId: string }) {
               {c.combined_note && <p className="num mt-0.5 text-[11px] text-warn">{c.combined_note}</p>}
               {c.severity === "HIGH" && <p className="mt-0.5 text-[11px] text-fail/90">Approval blocked until resolved — humans resolve, the platform never auto-optimizes.</p>}
               {user && ["KPI_OWNER", "EXECUTIVE", "ADMIN"].includes(user.role) ? (
-                <ResolveControls c={c} onDone={async () => { await refreshCollisions(); }} />
+                <ResolveControls c={c} onDone={async () => { window.dispatchEvent(new Event("demo-refresh")); }} />
               ) : (
                 <p className="mt-0.5 text-[10.5px] text-txt-muted">Resolution: {c.resolution_options.join(" · ")}</p>
               )}
@@ -122,7 +109,7 @@ function OptionsPanel({ inv, kpiId }: { inv: Investigation; kpiId: string }) {
               <SecondOrderChain effects={o.simulation.second_order.effects} rule={o.simulation.second_order.rule} />
             )}
             {["APPROVED", "OVERRIDDEN", "MONITORING"].includes(o.record?.status ?? "") && (
-              <OutcomeControls inv={invState} opt={o} onDone={load2} canRecord={!!user && user.role !== "ANALYST"} />
+              <OutcomeControls inv={invState} opt={o} canRecord={!!user && user.role !== "ANALYST"} />
             )}
             {o.record?.status ? (
               <p className="num mt-1.5 border-t border-line pt-1 text-[11px] text-txt-muted">
@@ -154,7 +141,7 @@ function OptionsPanel({ inv, kpiId }: { inv: Investigation; kpiId: string }) {
   );
 }
 
-function OutcomeControls({ inv, opt, onDone, canRecord }: { inv: Investigation; opt: DecisionOption; onDone: () => void; canRecord: boolean }) {
+function OutcomeControls({ inv, opt, canRecord }: { inv: Investigation; opt: DecisionOption; canRecord: boolean }) {
   const rec = opt.record;
   const [actual, setActual] = React.useState("");
   const [note, setNote] = React.useState("");
@@ -163,7 +150,7 @@ function OutcomeControls({ inv, opt, onDone, canRecord }: { inv: Investigation; 
   const [effect, setEffect] = React.useState<Record<string, unknown> | null>(null);
   const close = async () => {
     setBusy(true); setErr(null);
-    try { await api.post(`/memory/investigations/${inv.id}/close`, {}); onDone(); }
+    try { await api.post(`/memory/investigations/${inv.id}/close`, {}); window.dispatchEvent(new Event("demo-refresh")); }
     catch (e) { setErr(e instanceof ApiError ? e.message : "Close failed"); }
     finally { setBusy(false); }
   };
@@ -199,7 +186,7 @@ function OutcomeControls({ inv, opt, onDone, canRecord }: { inv: Investigation; 
           try {
             const r = await api.post<Record<string, unknown>>(`/decisions/${opt.id}/outcome`,
               { actual_impact_rs: Number(actual), note });
-            setEffect(r); onDone();
+            setEffect(r); window.dispatchEvent(new Event("demo-refresh"));
           } catch (e) { setErr(e instanceof ApiError ? e.message : "Outcome failed"); }
           finally { setBusy(false); }
         }} className="rounded border border-pass/50 px-2 py-1 text-[10.5px] text-pass hover:bg-pass/10 disabled:opacity-40">

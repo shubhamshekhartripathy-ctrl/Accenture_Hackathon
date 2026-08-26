@@ -112,10 +112,10 @@ export function ContractTab({ contract }: { contract: ContractDetail }) {
               <tr key={r.id} className="border-b border-line/50">
                 <td className="py-1.5 pr-3 text-txt-secondary">{r.role}</td>
                 <td className="num py-1.5 pr-3 text-txt-primary">{r.action_class}</td>
-                <td className="py-1.5 pr-3 text-[11px]">
-                  {r.may_recommend && <span className="text-txt-muted">rec </span>}
-                  {r.may_simulate && <span className="text-txt-muted">sim </span>}
-                  {r.may_approve ? <Chip tone="pass">approve</Chip> : <span className="text-txt-muted">—</span>}
+                <td className="py-1.5 pr-3">
+                  {r.may_recommend && <span className="mr-1"><Chip tone="neutral">recommend</Chip></span>}
+                  {r.may_simulate && <Chip tone="neutral">simulate</Chip>}
+                  {r.may_approve ? <Chip tone="pass">approve</Chip> : <span className="ml-1 text-txt-muted">—</span>}
                 </td>
                 <td className="num py-1.5 pr-3 text-right text-txt-secondary">
                   {r.may_approve ? inr(r.approve_limit_rs) : "—"}

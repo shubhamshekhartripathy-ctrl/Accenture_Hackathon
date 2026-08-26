@@ -13,7 +13,7 @@ from ..security.deps import require_roles
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 _read_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
-_start_guard = require_roles("ANALYST", "ADMIN", "EXECUTIVE")
+_start_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
 
 
 @router.get("")

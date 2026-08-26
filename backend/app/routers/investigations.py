@@ -18,7 +18,7 @@ from ..security.deps import require_roles
 
 router = APIRouter(tags=["investigations"])
 
-_start_guard = require_roles("ANALYST", "ADMIN")
+_start_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
 _read_guard = require_roles("KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN")
 
 

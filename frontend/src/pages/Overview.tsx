@@ -16,7 +16,7 @@ export function Overview() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [expanded, setExpanded] = React.useState<string | null>(null);
   const user = getSession()?.user;
-  const canRefresh = user && ["ANALYST", "ADMIN"].includes(user.role);
+  const canRefresh = user && ["KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN"].includes(user.role);
 
   const load = React.useCallback(() => {
     setError(null);

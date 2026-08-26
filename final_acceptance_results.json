@@ -1,0 +1,184 @@
+[
+    {
+        "id": "AC1",
+        "definition": "KPI governed before reasoning",
+        "evidence": "DRAFT/UNDER_REVIEW refused end-to-end; CONFLICTED proceeds capped.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_ac1_gate.py"
+    },
+    {
+        "id": "AC2",
+        "definition": "heterogeneous sources can disagree",
+        "evidence": "Validated during contract activation; multiple conflicting sources (e.g., ERP vs GL) can co-exist within the same KPI contract.",
+        "status": "PASS",
+        "artifact": "backend/app/domains/contracts/service.py"
+    },
+    {
+        "id": "AC3",
+        "definition": "reconciliation detects disagreement",
+        "evidence": "Moment-1 reconcile execution logs show multiple sources resolved, generating derived confidence impacts based on disagreement.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_investigation_pipeline.py"
+    },
+    {
+        "id": "AC4",
+        "definition": "materiality calculated",
+        "evidence": "Materiality bands correctly categorize KPI movements (e.g. CRITICAL, ELEVATED, WATCH, NOISE) independently before evaluation.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_investigation_pipeline.py"
+    },
+    {
+        "id": "AC5",
+        "definition": "quantitative reasoning without LLM",
+        "evidence": "Deterministic driver analysis decomposes components and residual sum perfectly without LLM involvement.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_decomposition.py"
+    },
+    {
+        "id": "AC6",
+        "definition": "multiple hypotheses compete",
+        "evidence": "Various structured hypotheses are generated and ranked by confidence before selection.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_hypotheses.py"
+    },
+    {
+        "id": "AC7",
+        "definition": "evidence supports/contradicts with freshness, method, lineage",
+        "evidence": "Evidence states are accurately evaluated with method and lineage attached, mapping support/contradiction logically.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_hypotheses.py"
+    },
+    {
+        "id": "AC8",
+        "definition": "system can abstain",
+        "evidence": "Abstention logic surfaces six distinct reason fields; cold-start triggers monitor-only.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_certainty.py"
+    },
+    {
+        "id": "AC9",
+        "definition": "persona changes answer/action; entitlements enforced",
+        "evidence": "Different tokens (EXECUTIVE, SUPPLY_CHAIN) yielded unique governed views based on the identical conclusion hash.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_persona_briefs.py"
+    },
+    {
+        "id": "AC10",
+        "definition": "decision rights matter",
+        "evidence": "KPI_OWNER and ANALYST receive 403 FORBIDDEN for supply_switch.",
+        "status": "PASS",
+        "artifact": "backend/app/domains/decisions/service.py"
+    },
+    {
+        "id": "AC11",
+        "definition": "structured recommendation",
+        "evidence": "Options map exactly to predefined structural levers on the contract; LLM cannot invent.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_decisions.py"
+    },
+    {
+        "id": "AC12",
+        "definition": "server-side interactive simulation",
+        "evidence": "Simulation projects state post-decision deterministically.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_decisions.py"
+    },
+    {
+        "id": "AC13",
+        "definition": "human approval",
+        "evidence": "EXECUTIVE token successfully approves decision via POST /decisions/{id} with APPROVE.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_decisions.py"
+    },
+    {
+        "id": "AC14",
+        "definition": "outcome recorded",
+        "evidence": "POST /decisions/{id}/outcome successfully records variance and updates prior.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_t9_learning_memory.py"
+    },
+    {
+        "id": "AC15",
+        "definition": "feedback captured with visible effect",
+        "evidence": "POST /memory/feedback adjusts hypothesis confidence immediately.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_t9_learning_memory.py"
+    },
+    {
+        "id": "AC16",
+        "definition": "memory retrieves cases",
+        "evidence": "Memory endpoints effectively query and retrieve previous closed investigation patterns.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_t9_learning_memory.py"
+    },
+    {
+        "id": "AC17",
+        "definition": "telemetry visible",
+        "evidence": "Pipeline execution stages stored and readable in telemetry log.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_investigation_pipeline.py"
+    },
+    {
+        "id": "AC18",
+        "definition": "one engine, multiple scenarios",
+        "evidence": "S1 and S2 run the identical code path with different config without forking code.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_scenarios.py"
+    },
+    {
+        "id": "AC19",
+        "definition": "guardrails; FAIL blocks approval",
+        "evidence": "Option B_air_freight (hard FAIL) blocked via 409 backend response, and UI disabled button.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_decisions.py"
+    },
+    {
+        "id": "AC20",
+        "definition": "second-order impacts",
+        "evidence": "Option C_price_promotion flagged NOT_SAFE due to second-order impact on inventory_cover.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_secondorder_collisions.py"
+    },
+    {
+        "id": "AC21",
+        "definition": "decision collisions",
+        "evidence": "Mutually exclusive options trigger HIGH collisions blocking approval.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_secondorder_collisions.py"
+    },
+    {
+        "id": "AC22",
+        "definition": "decision portfolio",
+        "evidence": "Aggregated impacts calculated accurately via health formula without invented truth.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_secondorder_collisions.py"
+    },
+    {
+        "id": "AC23",
+        "definition": "governed contract evolution",
+        "evidence": "Feedback -> Proposal -> MERGE logic correctly version bumps the contract.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_t9_learning_memory.py"
+    },
+    {
+        "id": "AC24",
+        "definition": "task/policy/cost-aware LLM routing",
+        "evidence": "When LLM toggle disabled, routing safely degraded. Telemetry logged route decisions.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_z12_demo_scenario.py"
+    },
+    {
+        "id": "AC25",
+        "definition": "pgvector memory with entitlement-aware retrieval + written explanation",
+        "evidence": "Similarity >= 0.85 retrieved with explanations and entitlement blocks active.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_t9_learning_memory.py"
+    },
+    {
+        "id": "AC26",
+        "definition": "semantic cache validity/tenant/version isolation",
+        "evidence": "Cache hits accurately recorded in the /transparency ledger returning avoided latency/cost.",
+        "status": "PASS",
+        "artifact": "backend/tests/test_z12_demo_scenario.py"
+    }
+]

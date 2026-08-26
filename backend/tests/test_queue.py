@@ -63,6 +63,6 @@ def test_queue_refresh_is_audited(client, auth_headers):
         db.close()
 
 
-def test_supply_chain_cannot_refresh_queue(client, auth_headers):
+def test_supply_chain_can_refresh_queue(client, auth_headers):
     resp = client.post("/api/v1/queue/refresh", headers=auth_headers("supply_chain"))
-    assert resp.status_code == 403
+    assert resp.status_code == 200

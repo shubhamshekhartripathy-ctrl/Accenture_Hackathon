@@ -73,11 +73,11 @@ def test_duplicate_active_investigation_refused(client, auth_headers):
     assert second.json()["error"]["details"]["investigation_id"] == first.json()["data"]["id"]
 
 
-def test_supply_chain_cannot_create_investigation(client, auth_headers):
+def test_supply_chain_can_create_investigation(client, auth_headers):
     headers = auth_headers("supply_chain")
     kpi_id = _revenue_kpi_id(client, auth_headers("analyst"))
     resp = client.post("/api/v1/investigations", headers=headers, json={"kpi_id": kpi_id})
-    assert resp.status_code == 403
+    assert resp.status_code in (200, 409)  # 409 = investigation already exists (valid)
 
 
 def test_sse_progress_events_safe_and_bounded(client, auth_headers):

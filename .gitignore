@@ -7,4 +7,13 @@ dist/
 .env
 backend/.env
 backend/reasonflow.db
-frontend/.env
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.log
+*.tar
+*.zip
+.vscode/
+.idea/
+.antigravity/

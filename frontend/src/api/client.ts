@@ -35,6 +35,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       method,
       headers: { "Content-Type": "application/json", ...authHeader() },
       body: body === undefined ? undefined : JSON.stringify(body),
+      cache: "no-store",
       signal: undefined,
     });
   } catch {

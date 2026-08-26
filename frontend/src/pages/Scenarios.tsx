@@ -48,16 +48,21 @@ export function Scenarios() {
     setStartError(null);
     try {
       await api.post<Workspace>(`/scenarios/${scenario.scenario_id}/start`);
-      navigate("/kpis", { state: { scenario: scenario.scenario_id } });
+      const kpis = await api.get<{ id: string, code: string }[]>("/kpis");
+      const kpi = kpis.find((k) => k.code === scenario.primary_kpi);
+      if (!kpi) throw new Error("Primary KPI not found for scenario");
+      
+      await api.post("/investigations", { kpi_id: kpi.id });
+      navigate(`/kpis/${kpi.id}`);
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : "Failed to start scenario";
+      const msg = e instanceof ApiError ? e.message : (e as Error).message;
       setStartError({ id: scenario.scenario_id, msg });
     } finally {
       setStarting(null);
     }
   };
 
-  const canStart = user && ["ANALYST", "EXECUTIVE", "ADMIN"].includes(user.role);
+  const canStart = user && ["KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN"].includes(user.role);
 
   return (
     <div className="space-y-4">
@@ -69,7 +74,7 @@ export function Scenarios() {
             problems. A scenario changes data and configuration, never code paths.
           </p>
         </div>
-        {!canStart && <Chip tone="warn" title="Only ANALYST / ADMIN / EXECUTIVE can start scenarios">start: ANALYST · ADMIN</Chip>}
+        {!canStart && <Chip tone="warn" title="Only authenticated users can start scenarios">start: AUTHENTICATED</Chip>}
       </div>
 
       {error && <ErrorState message={error} retry={load} />}

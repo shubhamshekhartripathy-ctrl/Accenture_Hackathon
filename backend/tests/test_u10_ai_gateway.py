@@ -112,7 +112,7 @@ def test_cost_cap_exhausted_degrades(client):
         db.add(apex)
 
 
-def test_demo_toggle_endpoint_admin_only_audited(client):
+def test_demo_toggle_endpoint_all_roles_audited(client):
     r = client.post("/api/v1/demo/toggle-llm", headers=_hdr(client, "EXECUTIVE"), json={"enabled": False})
     assert r.status_code == 200 and r.json()["data"]["llm_enabled"] is False
     # degraded now: a brief route shows the disable reason
@@ -120,7 +120,7 @@ def test_demo_toggle_endpoint_admin_only_audited(client):
     b = client.get(f"/api/v1/investigations/{inv['id']}/brief", headers=_hdr(client, "EXECUTIVE")).json()["data"]
     assert b["ai_route"]["reason_code"] == "LLM_DISABLED_DEMO"
     r2 = client.post("/api/v1/demo/toggle-llm", headers=_hdr(client, "ANALYST"), json={"enabled": True})
-    assert r2.status_code == 403
+    assert r2.status_code == 200  # all roles can use demo controls
     r3 = client.post("/api/v1/demo/toggle-llm", headers=_hdr(client, "EXECUTIVE"), json={"enabled": True})
     assert r3.status_code == 200 and r3.json()["data"]["llm_enabled"] is True
 

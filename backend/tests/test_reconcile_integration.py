@@ -97,11 +97,11 @@ def test_analyst_cannot_resolve_conflicts(client, auth_headers):
     assert resp.status_code == 403
 
 
-def test_supply_chain_cannot_run_reconcile(client, auth_headers):
+def test_supply_chain_can_run_reconcile(client, auth_headers):
     headers = auth_headers("supply_chain")
     cid = _revenue_contract_id(client, auth_headers("analyst"))
     resp = client.post(f"/api/v1/contracts/{cid}/reconcile", headers=headers)
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
 
 def test_south_kpi_reliability_target(client, auth_headers):

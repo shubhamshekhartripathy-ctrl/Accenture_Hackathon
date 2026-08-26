@@ -42,7 +42,7 @@ export function CaseFileReconcile({ contractId, unit }: { contractId: string; un
   const [busy, setBusy] = React.useState(false);
   const [resolveNote, setResolveNote] = React.useState<Record<string, string>>({});
   const user = getSession()?.user;
-  const canRun = user && ["ANALYST", "ADMIN"].includes(user.role);
+  const canRun = user && ["KPI_OWNER", "ANALYST", "EXECUTIVE", "SUPPLY_CHAIN", "ADMIN"].includes(user.role);
   const canResolve = user && ["KPI_OWNER", "ADMIN"].includes(user.role);
 
   const load = React.useCallback(() => {
@@ -67,8 +67,9 @@ export function CaseFileReconcile({ contractId, unit }: { contractId: string; un
     setBusy(true);
     setError(null);
     try {
-      const data = await api.post<ReconcileRun>(`/contracts/${contractId}/reconcile`);
+      const data = await api.post<ReconcileRun>(`/contracts/${contractId}/reconcile`, {});
       setRun(data);
+      window.dispatchEvent(new Event("demo-refresh"));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Reconciliation failed");
     } finally {
@@ -87,6 +88,7 @@ export function CaseFileReconcile({ contractId, unit }: { contractId: string; un
     try {
       const data = await api.post<ReconcileRun>(`/conflicts/${conflictId}/resolve`, { note });
       setRun(data);
+      window.dispatchEvent(new Event("demo-refresh"));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Resolve failed");
     } finally {

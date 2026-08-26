@@ -66,12 +66,12 @@ export function DemoBar() {
         ))}
         <span className="mx-1 h-4 w-px bg-line" aria-hidden />
         <button
-          disabled={busy || !(session?.user.role === "EXECUTIVE" || session?.user.role === "ADMIN")}
+          disabled={busy}
           title="Refresh the POS feed — the next run sees fresher evidence (audited)"
           onClick={async () => {
             setBusy(true); setNotice(null);
             try {
-              const out = await api.post<{ documents_refreshed: number }>("/demo/inject-pos", {});
+              const out = await api.post<{ documents_refreshed: number }>("/demo/inject-pos");
               setNotice(`POS refreshed — ${out.documents_refreshed} documents, rerun shows fresher evidence`);
               triggerRefresh();
             } catch (e) { setNotice(`Inject failed: ${(e as Error).message}`); }
@@ -82,7 +82,7 @@ export function DemoBar() {
           Inject POS refresh
         </button>
         <button
-          disabled={busy || !(session?.user.role === "EXECUTIVE" || session?.user.role === "ADMIN")}
+          disabled={busy}
           title="Advance the demo clock 14 days — freshness decays, monitoring windows advance (audited)"
           onClick={async () => {
             setBusy(true); setNotice(null);
@@ -98,7 +98,7 @@ export function DemoBar() {
           Fast-forward 14d
         </button>
         <button
-          disabled={busy || !(session?.user.role === "EXECUTIVE" || session?.user.role === "ADMIN")}
+          disabled={busy}
           title="Flip every model route to the deterministic fallback — visible in the Ledger"
           onClick={async () => {
             setBusy(true); setNotice(null);
@@ -117,13 +117,13 @@ export function DemoBar() {
           Toggle LLM {llmOn ? "ON" : "OFF"}
         </button>
         <button
-          disabled={busy || !(session?.user.role === "EXECUTIVE" || session?.user.role === "ADMIN")}
+          disabled={busy}
           title="Wipe and reseed the demo data (audited) — reload to re-login"
           onClick={async () => {
             if (!window.confirm("Reset wipes and reseeds the demo database. Continue?")) return;
             setBusy(true); setNotice(null);
             try {
-              await api.post("/demo/reset", {});
+              await api.post("/demo/reset");
               setNotice("Demo reset — database reseeded; reloading…");
               window.setTimeout(() => window.location.assign("/login"), 1200);
             } catch (e) { setNotice(`Reset failed: ${(e as Error).message}`); }

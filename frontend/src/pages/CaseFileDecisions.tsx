@@ -36,7 +36,7 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
   const options = invState.options ?? [];
   const collisions = (invState as Investigation & { collisions?: Collision[] }).collisions ?? [];
   const coll = collisions;
-  if (options.length === 0 && invState.certainty_state === "ABSTAIN") return null;
+
 
   const decide = async (opt: DecisionOption, decision: string) => {
     setBusy(opt.id); setErr(null);
@@ -53,7 +53,35 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
     } finally { setBusy(null); }
   };
 
-  if (options.length === 0) return null;
+  if (options.length === 0) {
+    if (invState.certainty_state === "CLARIFY") {
+      return (
+        <Card title="Decision blocked: Clarification required" subtitle="Pipeline paused due to data gap or conflict">
+          <div className="rounded border border-warn/40 bg-warn/5 p-4 text-[13px] text-warn">
+            <p className="mb-1 font-semibold">Investigation Paused</p>
+            <p>ReasonFlow cannot proceed to decision generation because of an unresolved conflict or missing data. Please review the Contract or Reconcile tabs to resolve the issue.</p>
+          </div>
+        </Card>
+      );
+    }
+    if (invState.certainty_state === "ABSTAIN") {
+      return (
+        <Card title="System Abstained" subtitle="No action recommended">
+          <div className="rounded border border-fail/40 bg-fail/5 p-4 text-[13px] text-fail">
+            <p className="mb-1 font-semibold">Decision Generation Halted</p>
+            <p>ReasonFlow has abstained from making a recommendation based on the current data and contract rules.</p>
+          </div>
+        </Card>
+      );
+    }
+    return (
+      <Card title="No options available" subtitle="Pipeline completed without recommendations">
+        <div className="p-4 text-[13px] text-txt-secondary">
+          No decision options were generated for this investigation.
+        </div>
+      </Card>
+    );
+  }
   return (
     <Card title="Decision options" subtitle="From the active scenario configuration · simulated deterministically · guardrail FAIL blocks approval">
       {coll.filter((c) => !c.resolved && (c.severity === "HIGH" || c.severity === "MEDIUM")).length > 0 && (
@@ -118,7 +146,7 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
               </p>
             ) : (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {o.guardrail_status === "PASS" && user && ["SUPPLY_CHAIN", "EXECUTIVE", "KPI_OWNER", "MARKETING"].includes(user.role) && (
+                {o.guardrail_status === "PASS" && o.rights_verdict === "AUTHORIZED" && (
                   <button disabled={busy === o.id} onClick={() => decide(o, "APPROVE")}
                     className="rounded border border-pass/50 bg-pass/10 px-2.5 py-1 text-[11.5px] font-medium text-pass hover:bg-pass/20 disabled:opacity-50">Approve</button>
                 )}

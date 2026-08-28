@@ -51,8 +51,11 @@ export function Scenarios() {
       const kpis = await api.get<{ id: string, code: string }[]>("/kpis");
       const kpi = kpis.find((k) => k.code === scenario.primary_kpi);
       if (!kpi) throw new Error("Primary KPI not found for scenario");
-      
-      await api.post("/investigations", { kpi_id: kpi.id });
+      try {
+        await api.post("/investigations", { kpi_id: kpi.id });
+      } catch (e: any) {
+        console.warn("Investigation creation:", e);
+      }
       navigate(`/kpis/${kpi.id}`);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : (e as Error).message;

@@ -86,7 +86,14 @@ def reset(actor_user_id: str, actor_role: str) -> dict:
     """Wipe + reseed. The audit of the reset itself is written after seeding."""
     _require_demo_mode()
     from ..db import Base, engine
+    from sqlalchemy import text
     from ..seed.seed import run_seed
+
+    if engine.name == "postgresql":
+        with engine.connect() as conn:
+            conn.execution_options(isolation_level="AUTOCOMMIT").execute(
+                text("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid();")
+            )
 
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)

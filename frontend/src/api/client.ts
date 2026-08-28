@@ -29,9 +29,13 @@ function authHeader(): Record<string, string> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  let url = `${BASE}${path}`;
+  if (method === "GET") {
+    url += (url.includes("?") ? "&" : "?") + `_t=${Date.now()}`;
+  }
   let resp: Response;
   try {
-    resp = await fetch(`${BASE}${path}`, {
+    resp = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json", ...authHeader() },
       body: body === undefined ? undefined : JSON.stringify(body),

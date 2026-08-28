@@ -35,10 +35,10 @@ export function ContractTab({ contract }: { contract: ContractDetail }) {
             <div key={s.id} className="rounded border border-line bg-ink-850 px-3 py-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13px] font-medium text-txt-primary">{s.source_name}</span>
-                {s.is_authoritative && <Chip tone="gold">authoritative</Chip>}
-                <Chip tone={s.data_classification === "SENSITIVE" || s.data_classification === "RESTRICTED" ? "warn" : "neutral"}>
+                {s.is_authoritative && <span className="text-[10px] font-semibold uppercase tracking-wide text-gold">authoritative</span>}
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${s.data_classification === "SENSITIVE" || s.data_classification === "RESTRICTED" ? "text-warn" : "text-txt-secondary"}`}>
                   {s.data_classification}
-                </Chip>
+                </span>
                 <span className="ml-auto text-[11px] text-txt-muted">
                   {s.expected_cadence} · {s.expected_grain} · tol {s.tolerance_pct}%
                 </span>
@@ -113,9 +113,9 @@ export function ContractTab({ contract }: { contract: ContractDetail }) {
                 <td className="py-1.5 pr-3 text-txt-secondary">{r.role}</td>
                 <td className="num py-1.5 pr-3 text-txt-primary">{r.action_class}</td>
                 <td className="py-1.5 pr-3">
-                  {r.may_recommend && <span className="mr-1"><Chip tone="neutral">recommend</Chip></span>}
-                  {r.may_simulate && <Chip tone="neutral">simulate</Chip>}
-                  {r.may_approve ? <Chip tone="pass">approve</Chip> : <span className="ml-1 text-txt-muted">—</span>}
+                  {r.may_recommend && <span className="mr-2 text-[10.5px] font-medium uppercase tracking-wide text-txt-secondary">recommend</span>}
+                  {r.may_simulate && <span className="mr-2 text-[10.5px] font-medium uppercase tracking-wide text-txt-secondary">simulate</span>}
+                  {r.may_approve ? <span className="text-[10.5px] font-medium uppercase tracking-wide text-pass">approve</span> : <span className="ml-1 text-txt-muted">—</span>}
                 </td>
                 <td className="num py-1.5 pr-3 text-right text-txt-secondary">
                   {r.may_approve ? inr(r.approve_limit_rs) : "—"}

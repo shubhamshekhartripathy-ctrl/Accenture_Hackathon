@@ -33,7 +33,6 @@ def run_migrations():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    run_migrations()
     if settings.seed_on_boot:
         from .seed.seed import run_seed
 
@@ -55,6 +54,7 @@ def create_app() -> FastAPI:
         request.state.request_id = uuid.uuid4().hex
         response = await call_next(request)
         response.headers["X-Request-ID"] = request.state.request_id
+        response.headers["Cache-Control"] = "no-store, max-age=0"
         return response
 
     app.add_middleware(

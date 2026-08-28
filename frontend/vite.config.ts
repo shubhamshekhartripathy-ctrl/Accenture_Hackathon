@@ -11,6 +11,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     allowedHosts: [".e2b.app", "localhost", "127.0.0.1"],
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       // Relative /api from the browser; the dev server proxies to the backend.
       // Local dev targets localhost; docker compose sets API_PROXY_TARGET=http://api:8000.

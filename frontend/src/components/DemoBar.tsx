@@ -35,7 +35,7 @@ export function DemoBar() {
         user: data.user,
       });
       setNotice(`Persona switched — ${data.user.full_name} (${data.user.role})`);
-      navigate("/kpis");
+      window.location.reload();
     } catch (e) {
       setNotice(`Switch failed: ${(e as Error).message}`);
     } finally {

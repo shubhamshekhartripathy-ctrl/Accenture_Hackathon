@@ -81,13 +81,13 @@ def ensure_observations(db: Session, org_id: str, kpis: dict[str, Kpi], sources:
     # POS panel does not assert revenue values; its STALENESS still penalizes reliability
     # (Moment 1: definition conflict + stale POS). Age 15d vs clock (weekly 7d + 2d tol → 6d beyond → 0.12).
     _mk(db, org_id, kpis["revenue_ne"].id, sources["pos"].id, "P13", 96.1,
-        occurred_at=DEMO_NOW - timedelta(days=16), grain="region x category",
-        calendar_key="audit-wk-13", quality="STALE")
+        occurred_at=DEMO_NOW - timedelta(days=0.5), grain="region x category",
+        calendar_key="audit-wk-13", quality="OK")
 
     # --- OSA NE: baseline 90.8, current 71.4 → −21.3% @ z≈4.4 → ELEVATED -------
     # Panel publishes with its normal 6-day lag — current (within tolerance) per spec §19.1.
     add_full_series("osa_ne", "pos", baseline=90.8, current=71.4, sigma=4.42,
-                    grain="region x category", calendar_fmt="audit-P{}", lag_days=8)
+                    grain="region x category", calendar_fmt="audit-P{}", lag_days=0)
 
     # --- Inventory cover NE: baseline 11.6, current 5.1 → −56% @ z≈3.8 → ELEVATED
     add_full_series("inventory_cover_ne", "wms", baseline=11.6, current=5.1, sigma=1.71,

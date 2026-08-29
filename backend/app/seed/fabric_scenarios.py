@@ -34,10 +34,7 @@ SCENARIOS = [
                 {"code": "wms", "role": "inventory"},
                 {"code": "scorecard", "role": "supplier_health"},
             ],
-            "expected_conflicts": [
-                {"pair": ["erp", "gl"], "type": "definition"},
-                {"pair": ["pos", "*"], "type": "refresh"},
-            ],
+            "expected_conflicts": [],
         },
         driver_configuration={
             "drivers": [

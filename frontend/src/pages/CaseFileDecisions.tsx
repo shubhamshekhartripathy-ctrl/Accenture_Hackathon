@@ -30,26 +30,25 @@ export function CaseFileDecisions({ kpiId }: { kpiId: string }) {
 function OptionsPanel({ inv }: { inv: Investigation }) {
   const user = getSession()?.user;
   const [busy, setBusy] = React.useState<string | null>(null);
-  const [err, setErr] = React.useState<string | null>(null);
+  const [err, setErr] = React.useState<{ id: string; msg: string } | null>(null);
   const [invState, setInvState] = React.useState(inv);
   React.useEffect(() => { setInvState(inv); }, [inv]);
   const options = invState.options ?? [];
   const collisions = (invState as Investigation & { collisions?: Collision[] }).collisions ?? [];
   const coll = collisions;
 
-
   const decide = async (opt: DecisionOption, decision: string) => {
     setBusy(opt.id); setErr(null);
     let reason: string | null = null;
     if (decision === "OVERRIDE") {
       reason = window.prompt("Override requires a reason (it feeds the learning loop):") ?? "";
-      if (reason.trim().length < 10) { setBusy(null); setErr("Override cancelled — a reason of at least 10 characters is required."); return; }
+      if (reason.trim().length < 10) { setBusy(null); setErr({ id: opt.id, msg: "Override cancelled — a reason of at least 10 characters is required." }); return; }
     }
     try {
       await api.post(`/investigations/${invState.id}/decisions/${opt.id}`, { decision, override_reason: reason });
       window.dispatchEvent(new Event("demo-refresh"));
     } catch (e) {
-      setErr(e instanceof ApiError ? e.message : "Decision failed");
+      setErr({ id: opt.id, msg: e instanceof ApiError ? e.message : "Decision failed" });
     } finally { setBusy(null); }
   };
 
@@ -146,9 +145,16 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
               </p>
             ) : (
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {o.guardrail_status === "PASS" && o.rights_verdict === "AUTHORIZED" && (
+                {o.guardrail_status === "PASS" && (
                   <button disabled={busy === o.id} onClick={() => decide(o, "APPROVE")}
-                    className="rounded border border-pass/50 bg-pass/10 px-2.5 py-1 text-[11.5px] font-medium text-pass hover:bg-pass/20 disabled:opacity-50">Approve</button>
+                    className={`rounded border px-2.5 py-1 text-[11.5px] font-medium disabled:opacity-50 ${
+                      o.rights_verdict === "AUTHORIZED" 
+                        ? "border-pass/50 bg-pass/10 text-pass hover:bg-pass/20"
+                        : "border-warn/50 bg-ink-950 text-warn/90 hover:bg-warn/10"
+                    }`}
+                  >
+                    {o.rights_verdict === "AUTHORIZED" ? "Approve" : "Approve (Locked)"}
+                  </button>
                 )}
                 {o.guardrail_status !== "PASS" && o.escalation_target && (
                   <span className="rounded border border-warn/40 px-2 py-1 text-[11px] text-warn">Blocked — escalate to {o.escalation_target.replace(/_/g, " ")}</span>
@@ -161,10 +167,14 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
                 )}
               </div>
             )}
+            {err?.id === o.id && (
+              <div className="mt-2 rounded border border-fail/40 bg-fail/5 p-2 text-[11.5px] text-fail">
+                {err.msg}
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {err && <p className="mt-2 text-[12px] text-fail">{err}</p>}
     </Card>
   );
 }

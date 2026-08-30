@@ -278,7 +278,7 @@ export function BriefCard({ invId }: { invId: string }) {
           </div>
         ))}
       </div>
-      <button onClick={() => setExpanded(!expanded)} className="mt-2 text-[11px] text-gold hover:underline">
+      <button onClick={() => setExpanded(!expanded)} className="mt-3 rounded bg-gold/10 px-4 py-1.5 text-[11.5px] font-semibold tracking-wide text-gold transition-colors hover:bg-gold/20">
         {expanded ? "Show less" : "Show more"}
       </button>
     </Card>

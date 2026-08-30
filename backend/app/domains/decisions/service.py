@@ -271,8 +271,7 @@ def _rights(db: Session, organization_id: str, inv: Investigation,
             .filter(ContractRight.contract_id == inv.contract_id)
             .all()
         )
-        right = next((r for r in rights_rows if r.action_class == o.lever and r.may_approve), None) \
-            or next((r for r in rights_rows if r.action_class == o.lever), None)
+        right = next((r for r in rights_rows if r.action_class == o.lever and r.role == o.owner_role), None)
         if right is None:
             o.rights_verdict = "DENIED"
             o.rights_note = "No rights entry for this action class on the contract."
@@ -417,9 +416,9 @@ def decide(db: Session, organization_id: str, inv: Investigation, option: Decisi
         .filter(ContractRight.contract_id == inv.contract_id)
         .all()
     )
-    right = next((r for r in rights_rows if r.action_class == option.lever), None)
+    right = next((r for r in rights_rows if r.action_class == option.lever and r.role == actor_role), None)
     if decision == "APPROVE":
-        if right is None or right.role != actor_role or not right.may_approve:
+        if right is None or not right.may_approve:
             raise AppError("FORBIDDEN", f"{actor_role} may not approve {option.lever} actions on this contract", 403)
         if option.cash_exposure_rs > float(right.approve_limit_rs or 0):
             raise AppError("FORBIDDEN",

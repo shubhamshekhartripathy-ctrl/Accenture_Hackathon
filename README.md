@@ -1,678 +1,425 @@
-# ReasonFlow — Governed Decision Intelligence for Operations
+# ReasonFlow — Governed KPI-to-Decision Intelligence
 
-ReasonFlow is an enterprise decision-intelligence platform that turns operational signals into **governed, explainable, auditable decisions**.
+BI platforms tell organizations what changed. ReasonFlow helps determine why it changed, what evidence supports that explanation, how certain the conclusion is, what actions are available, whether those actions are safe, who is authorized to approve them, and what the organization should learn from the outcome.
 
-> **Detect the right problem → reconcile the truth → reason deterministically → evaluate safe actions → enforce decision rights → capture outcomes → learn from history.**
+## At a Glance
 
-This repository contains the Round 2 full-stack prototype for the Apex Foods FMCG operating environment, using PostgreSQL + pgvector + Redis with a React/Vite decision workspace.
+**Problem:** The space between a KPI moving and a decision being made is unowned and ungoverned — fragmented across dashboards, conflicting data sources, and disconnected approval workflows.
 
-## Why ReasonFlow?
+**Solution:** ReasonFlow turns material KPI movements into governed investigation and decision workflows, with explicit abstention when evidence is insufficient.
 
-Traditional analytics products often stop at dashboards and alerts. ReasonFlow continues through the decision lifecycle:
+**Prototype:** Illustrative seeded Apex Foods operational data, deterministic and reproducible.
 
-```text
-Operational signals
-        ↓
-Detection & materiality
-        ↓
-Contract governance
-        ↓
-Source reconciliation
-        ↓
-Investigation
-        ↓
-Hypotheses + evidence
-        ↓
-Deterministic reasoning
-        ↓
-Decision options
-        ↓
-Server-side simulation
-        ↓
-Guardrails + second-order impacts
-        ↓
-Decision rights + human approval
-        ↓
-Outcome + feedback
-        ↓
-Institutional memory
-```
+**Core Workflow:** Contract → Reconcile → Detect → Investigate → Decide → Govern → Learn
 
-AI is deliberately bounded. Numerical conclusions remain deterministic, while LLM capabilities are constrained by routing policy, governance, guardrails, and auditability.
+**Stack:** React/Vite · FastAPI · PostgreSQL + pgvector · Redis
 
-## Core Capabilities
+---
 
-### 1. Governed KPI Contracts
+## The Problem
 
-Every KPI is backed by a contract defining what must be true before investigation:
+Enterprises run on KPIs, but the most expensive layer of the modern enterprise — the space between a KPI moving and a decision being made — is unowned.
 
-- KPI definition and formula
-- source systems
-- thresholds
-- owners and drivers
-- decision rights
-- entitlements
-- versions
-- audit history
+The chain breaks at every link:
 
-A KPI cannot simply jump into reasoning without the required governance state.
+- **KPI definitions differ.** "Revenue" means invoiced net sales in ERP, recognized revenue in Finance, and sell-through in the CRM pipeline. Three teams can honestly disagree by millions because each number is valid within its own system.
+- **Systems disagree structurally.** ERP updates daily at SKU-level grain; POS retail audits update weekly with a publishing lag; the Finance GL closes monthly. Any cross-source question spans different clocks, different grains, and different maps.
+- **Teams act on partial truths.** Supply chain sees falling inventory and expedites; finance sees rising unit costs and withholds approval; marketing launches a promotion on a product that is out of stock. No shared evidence-backed decision context exists.
+- **Statistical anomalies are not business priorities.** A small wobble in a large P&L line can matter more than a large shift in a small line. Dashboards compute statistical significance but not business materiality.
+- **AI amplifies contradictory information.** A generative model given conflicting inputs does not surface the conflict — it averages it into confident prose. Fluent wrong answers are more dangerous than ugly correct dashboards, because prose buries its evidence and its uncertainty.
+- **Decisions need ownership and authority.** A recommendation with no owner is an opinion. A recommendation with no authority check is a liability — either it dies in an escalation loop, or someone without authority acts on it.
+- **Past decisions are forgotten.** The same "why is revenue down in the Northeast?" investigation recurs quarterly because the organization has no memory of how it resolved the question last time — what evidence mattered, what action was taken, and whether it worked.
 
-### 2. Multi-Source Reconciliation
+The consequence: reconciliation consumes analyst time, contradictory cross-team actions leak margin, and decision quality is never measured.
 
-ReasonFlow supports heterogeneous operational sources that can disagree.
+---
 
-Example:
+## The Solution
 
-```text
-ERP:      ₹84.0M
-Finance:  ₹87.0M
-POS:      stale / delayed
-WMS:      current
-```
+ReasonFlow treats each KPI as a governed business object — a **KPI Contract** that carries definition, sources, drivers, thresholds, entitlements, and decision rights — and converts each material movement into a governed decision workflow.
 
-The reconciliation layer identifies disagreement and feeds reliability/confidence effects into downstream reasoning.
+- **Contract** — Defines what the KPI means, what sources feed it, who owns it, and who may act on it. Governance happens before any reasoning begins.
+- **Reconcile** — Detects when data sources disagree and adjusts confidence based on the degree of disagreement. Conflicts are surfaced to the KPI owner, never merged silently.
+- **Detect** — Evaluates whether the movement exceeds what the KPI's own history predicts, using statistical baselines and seasonal context.
+- **Triage** — Calculates business materiality by combining statistical significance with financial exposure and strategic weight. Classifies movements into severity bands (CRITICAL, ELEVATED, WATCH, NOISE).
+- **Investigate** — Decomposes the movement deterministically to identify root drivers. Surfaces competing hypotheses backed by traceable evidence with explicit support/contradiction states.
+- **Decide** — Generates structured mitigation options locked to the contract's predefined levers. Each option is simulated on the server side with expected impact, cost, and time horizon.
+- **Guard** — Checks each option against safety guardrails (e.g., minimum inventory cover, maximum cash exposure) and calculates second-order impacts on related KPIs. Detects collisions with other teams' pending decisions.
+- **Govern** — Enforces decision rights: only authorized roles can approve specific actions within defined limits. Governed decisions require explicit human approval before they can be committed.
+- **Learn** — Tracks the predicted outcome against the actual result. The closed case — evidence, decision, outcome, variance — is persisted into institutional memory for future reference.
 
-### 3. Detection & Materiality
+---
 
-KPI movement is classified into materiality bands such as:
+## How Each Stage Works
 
-- `CRITICAL`
-- `ELEVATED`
-- `WATCH`
-- `NOISE`
+### KPI Governance
 
-Materiality is evaluated before downstream reasoning.
+Every KPI is backed by a governed contract that defines:
 
-### 4. Deterministic Investigation
+- **Identity:** Name, business definition (plain-language), formula (explicit and auditable), unit, business function, and owner.
+- **Sources and lineage:** Which systems feed this KPI, their refresh cadence, grain, and expected tolerance bands. For example, Revenue NE is fed by ERP (daily, SKU-level), Finance GL (monthly, account-level), and POS (weekly, regional).
+- **Drivers:** The known business drivers that can cause this KPI to move, ranked by prior weight. For Revenue NE, these include supplier delay, competitor promotion, marketing underperformance, and seasonality.
+- **Thresholds and materiality:** Warning and critical deviation percentages, financial exposure per deviation point, margin weight, and strategic weight.
+- **Decision rights:** Which roles may recommend, simulate, and approve actions, up to what financial limits, and to whom they must escalate above those limits.
+- **Entitlements:** Row-level and column-level data visibility restrictions per role (e.g., Supply Chain users see only their region; unit cost columns are masked from certain roles).
+- **Lifecycle:** Contract status (DRAFT → ACTIVE → CONFLICTED → UNDER_REVIEW), version history, and audit trail.
 
-The core quantitative reasoning does not require an LLM.
+A KPI without a governed contract cannot be investigated. Incomplete contracts degrade the system loudly — for example, undefined decision rights result in explanation-only mode with no action recommendations.
 
-The deterministic pipeline supports:
+### Reconciliation
 
-- robust statistical detection
-- decomposition
-- residual checks
-- confidence bounds
-- cold-start handling
-- abstention
-- replayable reasoning
+Before any investigation, the system evaluates the reliability of the data feeding the KPI:
 
-### 5. Hypotheses & Evidence
+- **Source disagreement:** ERP reports one value; Finance GL reports another. The system detects this as a definition conflict (e.g., invoiced vs. recognized revenue) and lowers confidence.
+- **Freshness mismatch:** POS audit data may be 6 days stale against its expected weekly cadence. Evidence from stale sources is discounted.
+- **Grain mismatch:** POS at region-by-category versus ERP at SKU-by-DC. Aggregation is performed with documented information loss.
+- **Coverage gaps:** Missing data windows are flagged and affected KPIs lose confidence.
 
-Investigations contain competing hypotheses.
+The reconciliation output is a reliability score per KPI that caps downstream confidence. A conflicted picture cannot produce a full-confidence conclusion. Definition conflicts are routed to the KPI Owner for resolution.
 
-Evidence can carry:
+### Detection and Materiality
 
-- support / contradiction
-- source
-- freshness
-- method
-- lineage
-- reliability
-- confidence effects
+KPI movements are evaluated in two dimensions:
 
-This creates a traceable reasoning chain instead of an opaque generated explanation.
+- **Statistical significance:** Robust z-score versus seasonal baseline, outside expected confidence interval. This detects whether the movement is distinguishable from normal variation.
+- **Business materiality:** Significance multiplied by financial exposure and strategic weight. This determines whether the movement deserves human attention.
 
-### 6. Decision Workspace
+Movements are classified into severity bands — CRITICAL, ELEVATED, WATCH, or NOISE. A statistically moderate deviation on a high-exposure KPI (e.g., Revenue NE at approximately ₹0.72M per deviation point) can be promoted to CRITICAL based on materiality alone.
 
-ReasonFlow generates structured decision options from predefined contractual levers.
+### Investigation
 
-Example options include:
+The system decomposes the KPI movement deterministically:
 
-- backup supplier
-- air freight
-- price promotion
-- phased promotion
-- inventory actions
+- **Decomposition:** SQL-based breakdown of the movement into component drivers (e.g., price, volume, mix for a revenue KPI).
+- **Hypotheses:** Multiple competing hypotheses are generated from the contract's known drivers and evaluated against traceable evidence.
+- **Evidence:** Each evidence record carries explicit metadata: source, polarity (supporting or contradicting), freshness, lineage, method, and data classification. For the hero scenario, four pieces of evidence support "Supplier Delay" while two separate evidence records contradict "Competitor Promo" (showing the competitor promotion is concentrated in the South region, not the Northeast).
+- **Confidence and abstention:** When evidence is contradictory, hypotheses tie, or data is sparse, the system enters an explicit ABSTAIN state with structured reasons. It refuses to recommend actions rather than manufacturing certainty. The cold-start scenario (Millet Noodles with only 5 weeks of history) demonstrates this: confidence is capped and the system operates in monitor-only mode.
 
-Each option can expose:
+### Decision Generation
 
-- expected impact
-- range
-- cost
-- horizon
-- guardrails
-- second-order impacts
-- decision rights
-- approval status
-- collision state
+Decision options are not invented by an LLM. They are structured levers predefined in the KPI contract:
 
-The system prevents an LLM from inventing arbitrary business levers.
+- Each option specifies the driver it addresses, the action lever, expected impact range (low/mid/high), cost, time horizon, and the role authorized to own it.
+- For Revenue NE, the seeded options include: Backup Supplier (₹1.6M cost, 42-day horizon, Supply Chain ownership), Air Freight Expedite (₹3.4M cost, 21-day horizon, escalation required), Price Promotion (₹1.1M cost, 21 days), and a Phased Promotion variant.
 
-### 7. Server-Side Simulation & Guardrails
+### Simulation and Guardrails
 
-Decision simulation runs on the server.
+Each decision option is simulated on the server side:
 
-An option can be:
+- **Simulation:** Projects the expected change in cover days, on-shelf availability recovery, margin impact, and direct effects on related KPIs.
+- **Guardrails:** Hard safety thresholds that automatically block execution. For the hero scenario, these include: gross margin floor (-1%), inventory cover minimum (5 days), cash exposure maximum (₹2M), and customer SLA minimum (95% on-shelf availability).
+- **Guardrail results:** Each option receives a status — PASS, WARNING, FAIL, or NOT_SAFE. Hard guardrail violations block approval at the backend.
 
-- `PASS`
-- `WARNING`
-- `FAIL`
-- `NOT_SAFE`
-- `UNKNOWN`
+### Second-Order Impacts and Collisions
 
-Hard guardrail failures block approval at the backend.
+KPIs are connected through defined relationships with typed edges (IMPACTS, PRECEDES) carrying elasticity, confidence, and lag:
 
-Example:
+- A price promotion that boosts revenue can simultaneously drain inventory cover below the safe minimum. The system calculates this propagation.
+- A pending procurement decision to reduce safety stock on the same lane can collide with a supply-switch decision. The system detects such collisions.
 
-```text
-Promotion
-   ↓
-higher sales
-   ↓
-inventory cover falls below required bound
-   ↓
-NOT_SAFE / FAIL
-   ↓
-approval blocked
-```
+### Decision Rights
 
-### 8. Decision Rights & Human Approval
+Decision authority is strictly governed:
 
-Decision authority is role-aware.
+- **Supply Chain** may approve supply-switch and expedite actions up to ₹2M. Actions above ₹2M require executive escalation.
+- **Executive** may approve actions up to ₹10M, including overriding standard constraints with an auditable justification.
+- **Analyst** may recommend and simulate but has no approval rights.
+- **Marketing** may recommend promotions but approval is routed to Executive.
 
-Demo personas:
+The backend enforces these limits. A Supply Chain manager attempting to approve a ₹3.4M air freight expedite receives a denial with escalation routing to the Executive role.
 
-| Name | Role |
-|---|---|
-| Meera Iyer | `ANALYST` |
-| Priya Sharma | `EXECUTIVE` |
-| Vikram Rao | `KPI_OWNER` |
-| Rahul Verma | `SUPPLY_CHAIN` |
+### Outcome and Feedback
 
-The backend is authoritative for:
+After a decision is committed and the monitoring period elapses:
 
-- approval rights
-- escalation
-- blocked actions
-- overrides
-- entitlements
+- The system records the predicted versus actual outcome and the variance.
+- Feedback can influence future reasoning, but contract changes (e.g., adjusting driver weights or thresholds) require governed review.
 
-AI does not auto-merge governed decisions.
+### Institutional Memory
 
-### 9. Second-Order Impacts & Collisions
+Every closed investigation — its evidence, actions, outcomes, and lessons — is persisted as a retrievable case. When a new anomaly occurs, the system performs an entitlement-aware similarity search to surface relevant past cases.
 
-ReasonFlow models consequences beyond the immediate KPI.
+The hero scenario includes a seeded historical case: "NE Q3 2025 — Supplier delay at Guwahati DC" where backup supplier activation recovered ₹3.1M within the expected band. This case is surfaced when the current hero investigation runs, providing precedent context.
 
-It can identify:
+For the cold-start Millet Noodles scenario, three launch-analogue cases (Atta Premium, Oils Blend, Snacks Range Extension) serve as sibling references when direct history is insufficient.
 
-- downstream KPI effects
-- resource depletion
-- service-level effects
-- shared-lever conflicts
-- mutually exclusive decisions
+Memory is stored using PostgreSQL with pgvector (256-dimensional embeddings, deterministic feature-hash method). Retrieval respects organizational and role-based entitlements.
 
-A collision can become a governed human-resolution workflow.
+### Transparency and AI Governance
 
-### 10. Outcomes & Feedback
+The system tracks every stage of the pipeline:
 
-The lifecycle continues after approval.
+- **Method labeling:** Each stage records whether it used deterministic logic (SQL, statistics, business rules) or governed AI capabilities (hypothesis drafting, evidence-text extraction, narrative translation).
+- **Routing:** A capability-based routing gateway directs tasks to the appropriate method. Governed AI is used only for labeled, metered tasks.
+- **Fallback:** If the LLM is unavailable, the pipeline operates in deterministic mode. Business conclusions, numerical outputs, and decision options remain intact.
+- **Telemetry:** Execution latency, model/route used, cache behavior, and cost information are recorded per stage.
 
-ReasonFlow records:
+---
 
-- expected result
-- actual result
-- variance
-- outcome band
-- feedback
-- reliability updates
-- governed contract proposals
+## KPIs in the Prototype
 
-This creates a closed decision-learning loop.
+The prototype demonstrates seven governed KPIs for the fictitious FMCG company Apex Foods:
 
-### 11. Institutional Memory with PostgreSQL + pgvector
+### Business KPIs
 
-Historical decision cases are persisted in PostgreSQL.
+| KPI | What it measures | Unit | Region |
+|---|---|---|---|
+| Revenue — Northeast | Invoiced net sales for the NE region, all channels | INR (millions) | NE |
+| On-Shelf Availability — NE | Share of audited SKU-store combinations found on shelf | Percentage | NE |
+| Inventory Days-of-Cover — NE | Forward days of demand covered by on-hand stock at NE DCs | Days | NE |
+| Marketing ROI | Incremental revenue per rupee of campaign spend | Ratio | National |
+| Supplier Reliability — NE Lane | On-time-in-full delivery rate for NE-lane suppliers | Percentage | NE |
+| Sales per Outlet — South | Average weekly sales per outlet (abstention demo case) | INR (thousands) | South |
+| Millet Noodles Revenue — Launch | Revenue for the newly launched Millet Noodles line (cold-start demo) | INR (millions) | National |
 
-Primary memory table:
+These KPIs are interconnected: Supplier Reliability impacts Inventory Cover, which impacts On-Shelf Availability, which impacts Revenue. This chain enables second-order impact calculation.
 
-```text
-public.historical_cases
-```
+### Investigation Metrics
 
-Important fields include:
+- **Materiality:** Combines statistical significance with financial exposure and strategic weight to determine severity (CRITICAL / ELEVATED / WATCH / NOISE).
+- **Confidence:** Derived from reconciliation reliability, evidence quality, data freshness, and hypothesis support strength. Capped by upstream conditions — conflicted sources reduce downstream confidence.
+- **Abstention reasons:** Structured fields explaining why the system declined to recommend (e.g., tied hypotheses, sparse history, stale evidence, unresolved conflict).
 
-- `kpi_code`
-- `driver_class`
-- `action_taken`
-- `outcome_rs`
-- `within_band`
-- `lesson`
-- `entities`
-- `access_roles`
-- `organization_id`
-- `embedding`
-- `embedding_method`
-- `embedding_version`
+### Decision Metrics
 
-The embedding column is:
+- **Expected impact:** Projected financial recovery in INR, expressed as a range (low / mid / high).
+- **Cost:** Direct cost of executing the action.
+- **Horizon:** Time in days for the action to take effect.
+- **Guardrail status:** PASS, WARNING, FAIL, or NOT_SAFE based on hard and soft threshold checks.
+- **Second-order impact:** Projected effect on related KPIs (e.g., cover-days change, OSA recovery percentage, margin delta).
+- **Collision state:** Whether this decision conflicts with another pending decision on the same or related KPIs.
 
-```text
-vector(256)
-```
+### System Metrics
 
-Historical cases can be retrieved by similarity while respecting organizational/entitlement boundaries.
+- **AI telemetry:** Execution stage, method used (deterministic vs. LLM), latency, model/route, cache behavior, and cost/token information where applicable.
 
-Initial historical memory is provided by the deterministic seed fabric under:
+---
 
-```text
-backend/app/seed/
-```
-
-### 12. Transparency & AI Governance
-
-The transparency layer records structured pipeline telemetry such as:
-
-- execution stage
-- latency
-- model/route
-- fallback
-- cache behavior
-- token/cost information when applicable
-- routing decisions
-- degraded states
-
-### 13. Multiple Scenarios, One Engine
-
-The same reasoning engine handles different operating scenarios.
-
-Examples:
-
-- Revenue Decline — Northeast
-- Inventory / Manufacturing Delay
-- Millet Noodles cold-start / new-product scenario
-
-The scenario configuration changes while the underlying engine remains shared.
-
-## Architecture
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│                        React / Vite UI                       │
-│                                                              │
-│ Scenarios → Overview → KPI Case File → Decision Workspace  │
-│ Investigation → Reconciliation → History → Memory → Ledger │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-                         REST / SSE
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│                           FastAPI                            │
-│                                                              │
-│ Auth / RBAC                                                 │
-│ Contracts                                                   │
-│ Detection / Triage                                         │
-│ Reconciliation                                              │
-│ Investigation                                               │
-│ Decisions                                                   │
-│ Outcomes / Feedback                                         │
-│ Memory                                                      │
-│ AI Governance / Telemetry                                  │
-│ Demo / Scenario control                                    │
-└───────────────┬──────────────────────┬───────────────────────┘
-                │                      │
-                ▼                      ▼
-        ┌───────────────┐      ┌───────────────┐
-        │ PostgreSQL 16 │      │ Redis 7       │
-        │ + pgvector    │      │ Cache / rate  │
-        └───────────────┘      └───────────────┘
-```
-
-PostgreSQL is the canonical application store. Alembic is the migration mechanism.
-
-## Technology Stack
-
-### Frontend
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Vitest
-
-### Backend
-- Python
-- FastAPI
-- SQLAlchemy 2
-- Pydantic
-- Alembic
-- psycopg 3
-
-### Data / Infrastructure
-- PostgreSQL 16
-- pgvector
-- Redis 7
-- Docker Compose
-
-### AI
-- deterministic reasoning baseline
-- configurable LLM routing
-- policy/capability-aware routing
-- fallback / degraded behavior
-- AI usage telemetry
-
-## Repository Structure
-
-```text
-reasonflow-round2_final/
-│
-├── backend/
-│   ├── app/
-│   │   ├── domains/
-│   │   ├── routers/
-│   │   ├── services/
-│   │   ├── seed/
-│   │   ├── memory/
-│   │   ├── learning/
-│   │   └── ...
-│   ├── alembic/
-│   ├── tests/
-│   ├── alembic.ini
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── api/
-│   │   ├── styles/
-│   │   └── tests/
-│   └── package.json
-│
-├── docker/
-│   └── db-init/
-│
-├── docs/
-│   ├── UI_UX_AUDIT.md
-│   ├── UI_UX_FINAL_QA.md
-│   └── FINAL_ACCEPTANCE_QA.md
-│
-├── IMPLEMENTATION_PLAN.md
-├── PROJECT_FILES.md
-├── docker-compose.yml
-└── README.md
-```
-
-## Running Locally with Docker
-
-### Prerequisites
-
-Install:
-
-- Docker Desktop
-- Git
-
-Docker Desktop must be running.
-
-### Start
-
-From the project root:
-
-```powershell
-docker compose up -d --build
-```
-
-Check:
-
-```powershell
-docker compose ps
-```
-
-Expected:
-
-```text
-postgres   healthy
-redis      healthy
-api        running
-ui         running
-```
-
-### Open
-
-Frontend:
-
-```text
-http://localhost:5173
-```
-
-FastAPI docs:
-
-```text
-http://localhost:8000/docs
-```
-
-Health:
-
-```powershell
-curl.exe http://localhost:8000/api/v1/health/ready
-```
-
-## Demo Personas
-
-Demo password:
-
-```text
-ReasonFlow#2026
-```
-
-| Name | Email | Role |
-|---|---|---|
-| Meera Iyer | `meera.analyst@apexfoods.example` | `ANALYST` |
-| Priya Sharma | `priya.ceo@apexfoods.example` | `EXECUTIVE` |
-| Vikram Rao | `vikram.owner@apexfoods.example` | `KPI_OWNER` |
-| Rahul Verma | `rahul.sc@apexfoods.example` | `SUPPLY_CHAIN` |
+## Personas
+
+ReasonFlow serves four personas viewing the same underlying analytical truth, with narrative depth and available actions tailored to their role:
+
+### Executive (CEO / CFO / COO)
+
+- **Needs:** Financial exposure, cost of waiting, and the strategic decision required.
+- **Sees:** High-level materiality, top drivers, aggregated impacts. Unit cost columns are masked.
+- **Can do:** Approve escalated strategic decisions up to ₹10M. Override standard constraints with an auditable justification.
+
+### KPI Owner / Data Steward
+
+- **Needs:** Contract accuracy, data source health, definition integrity.
+- **Sees:** Full lineage, source ledgers, contract proposals, and governance data across all regions and domains.
+- **Can do:** Resolve data conflicts that block downstream analysis. Update KPI thresholds and merge contract evolution proposals.
+
+### Supply Chain (Operations)
+
+- **Needs:** Operational drivers, specific mitigation levers, execution risk.
+- **Sees:** Row-level operational data for their region (NE). Unit cost and marketing ROI columns are masked.
+- **Can do:** Simulate options and approve actions within their ₹2M authorized limit. Actions exceeding this limit are escalated to the Executive role.
+
+### Analyst
+
+- **Needs:** Methodologies, decomposition math, evidence reliability, and AI telemetry.
+- **Sees:** Full visibility into formulas, evidence states, contradiction details, and system metrics across all regions.
+- **Can do:** Challenge hypotheses, correct drivers, submit feedback. Has no execution approval rights — can recommend and simulate but cannot commit a business action.
+
+---
 
 ## Hero Scenario
 
-The primary demo follows an Apex Foods Revenue Northeast investigation:
+**Revenue Decline — Northeast (Apex Foods, Instant Noodles)**
+
+This scenario demonstrates the complete ReasonFlow workflow using illustrative seeded data:
+
+1. **KPI movement.** The system detects that Northeast Revenue has declined 12% versus the seasonal baseline. The financial exposure (approximately ₹8.6M at this deviation) promotes the anomaly to CRITICAL.
+2. **Source conflict.** ERP reports ₹84M; Finance GL reports ₹87M for the same region and period. The reconciliation layer flags a definition conflict — the gap is explained by the difference between invoiced revenue (ERP, daily) and recognized revenue (GL, monthly close with returns accrual). POS data is also flagged as stale (6-day publishing lag). Overall confidence is lowered.
+3. **Investigation.** Deterministic decomposition identifies the root drivers — volume decline is the primary contributor.
+4. **Competing hypotheses.** Four hypotheses are evaluated against traceable evidence:
+   - "Supplier Delay" — supported by four pieces of evidence (supplier delay notice, OTIF drop from 94 to 81, days-of-cover collapse from 11.6 to 5.1, and OSA decline from 90.8 to 71.4).
+   - "Competitor Promo" — contradicted by two pieces of evidence (the competitor promotion is concentrated in the South region; NE promo-price index is flat).
+   - "Marketing Underperformance" — weakly supported by a stale mix report but contradicted by a fresh campaign report showing spend within plan.
+   - "Seasonality" — minimal prior weight with no strong supporting evidence.
+5. **Decision options.** The system surfaces structured mitigation options mapped to the KPI contract:
+   - Option A (Activate Backup Supplier): ₹1.6M cost, 42-day horizon, expected recovery ₹2.9M–₹5.2M.
+   - Option B (Air Freight Expedite): ₹3.4M cost, 21-day horizon, expected recovery ₹3.4M–₹5.8M.
+   - Option C (Price Promotion +10% in NE): ₹1.1M cost, 21-day horizon.
+6. **Guardrails and second-order impacts.** Option A passes all guardrails (cash exposure ₹1.6M is below the ₹2M threshold). Option B exceeds the cash-exposure guardrail (₹3.8M total exposure) and is blocked. Option C triggers a second-order impact: the revenue boost drains inventory cover below the 5-day hard minimum and is marked NOT SAFE.
+7. **Decision rights.** The Supply Chain manager is authorized to approve Option A (₹1.6M is within their ₹2M limit). Option B would require executive escalation.
+8. **Institutional memory.** The system surfaces a relevant historical case: "NE Q3 2025 — Supplier delay at Guwahati DC" where backup supplier activation recovered ₹3.1M within the expected band.
+9. **Outcome.** The approved decision, its evidence, and its projected outcome are saved for future reference.
+
+All values in this scenario are from the illustrative seeded prototype data.
+
+---
+
+## What the Prototype Demonstrates
+
+- KPI governance (contracts enforced before reasoning)
+- Multi-source reconciliation and conflict detection
+- Materiality-based detection and triage
+- Deterministic investigation and decomposition
+- Competing hypotheses with traceable evidence
+- Uncertainty evaluation and explicit abstention
+- Cold-start handling (Millet Noodles with 5 weeks of history)
+- Structured decision options locked to contract levers
+- Server-side simulation
+- Safety guardrails and second-order impact analysis
+- Decision collision detection
+- Role-based decision rights enforcement
+- Human approval workflow
+- Outcome tracking and feedback
+- Institutional memory with entitlement-aware retrieval
+- AI transparency and governance telemetry
+- Three operating scenarios on a shared reasoning engine
+
+---
+
+## Product Workflow
 
 ```text
-Revenue NE material decline
-        ↓
-Multi-source reconciliation disagreement
-        ↓
-Investigation
-        ↓
-Decomposition + hypotheses + evidence
-        ↓
-Decision options
-        ↓
-Server-side simulation
-        ↓
-Guardrails
-        ↓
-Second-order effects
-        ↓
-Decision collision
-        ↓
-Human approval
-        ↓
-Outcome
-        ↓
-Feedback
-        ↓
-Governed contract evolution
-        ↓
-Historical memory
-        ↓
-Transparency
+Operational Signal
+       ↓
+KPI Governance (Contract)
+       ↓
+Source Reconciliation
+       ↓
+Detection & Materiality
+       ↓
+Investigation & Evidence
+       ↓
+Deterministic Reasoning
+       ↓
+Decision Options
+       ↓
+Simulation & Guardrails
+       ↓
+Decision Rights & Human Approval
+       ↓
+Outcome & Learning
 ```
 
-Cold-start / abstention behavior is also supported when evidence or confidence is insufficient.
+---
 
-## Testing
+## Data Strategy
 
-### Frontend
+The prototype uses deterministic seeded data for a fictitious FMCG company, Apex Foods.
 
-From `frontend/`:
+**Why illustrative data?** Deterministic seed data guarantees reproducibility: the same scenario produces the same analytical conclusions, the same evidence rankings, and the same guardrail outcomes on every run. This provides a controlled demonstration environment where evaluators can trace the complete workflow from signal to decision without external dependencies.
 
-```powershell
-npm run typecheck
-npx vitest run
-npm run build
+The seed includes seven governed KPIs, five data sources (ERP, Finance GL, POS, WMS, Supplier Scorecard), four personas with configured rights and entitlements, three operating scenarios, and four historical memory cases.
+
+This is not real customer or enterprise data.
+
+---
+
+## Why Deterministic Reasoning with Governed AI
+
+The LLM is not the source of quantitative truth in ReasonFlow.
+
+**Quantitative reasoning** — detection, decomposition, materiality, simulation, guardrail checks, second-order propagation — is handled by deterministic analytical logic: SQL, statistics, and business rules. These outputs are reproducible and verifiable.
+
+**Governed AI capabilities** are used strictly for labeled, metered tasks:
+- Hypothesis drafting
+- Evidence-text extraction
+- Persona-specific narrative translation
+
+Each AI usage is labeled with its method, metered for cost and latency, and recorded in the transparency ledger. If the LLM is disabled or unavailable, the pipeline operates in deterministic mode — business conclusions, numerical outputs, and decision options remain intact.
+
+**Why this matters:** Deterministic quantitative reasoning prevents hallucinated numbers from entering the decision workflow. Governed routing prevents uncontrolled AI costs. Fallback behavior ensures the system remains operational without an LLM dependency.
+
+---
+
+## Architecture
+
+- **React / Vite** — Interactive, persona-aware decision workspace.
+- **FastAPI** — Deterministic reasoning pipeline, capability routing, authorization enforcement, and decision-rights gating.
+- **PostgreSQL 16 + pgvector** — Canonical system of record for structured data, KPI contracts, decision records, and institutional memory (256-dimensional vector embeddings for case similarity retrieval).
+- **Redis 7** — Semantic caching and rate-limiting to control AI costs and latency.
+
+## Technology Stack
+
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Vitest
+- **Backend:** Python, FastAPI, SQLAlchemy 2, Pydantic, Alembic, psycopg 3
+- **Data / Infrastructure:** PostgreSQL 16, pgvector, Redis 7, Docker Compose
+- **AI / Reasoning:** Deterministic reasoning baseline, configurable LLM routing, fallback/degraded behavior, AI usage telemetry
+
+---
+
+## Business Value
+
+ReasonFlow creates value through concrete operational mechanisms:
+
+- **Faster investigation** — Automated detection, decomposition, and evidence assembly reduce the time from anomaly to structured diagnosis.
+- **Reduced manual reconciliation** — Source conflicts are surfaced and classified before analysis, replacing ad-hoc cross-team reconciliation.
+- **Safer action selection** — Server-side simulation, guardrails, and second-order impact analysis surface risks before commitment.
+- **Clearer accountability** — Enforced decision rights ensure actions are approved by authorized roles within defined limits.
+- **Reusable organizational knowledge** — Institutional memory accumulates from every closed case, providing precedent context for future investigations.
+- **Controlled AI usage** — Governed routing, semantic caching, and deterministic fallback control LLM costs and prevent hallucinated outputs from reaching business conclusions.
+- **Auditable decisions** — The transparency ledger provides a traceable record of every stage, method, and cost.
+
+The prototype demonstrates these mechanisms. Production impact would depend on enterprise deployment with real operational data.
+
+---
+
+## Roadmap
+
+| Phase | Status |
+|---|---|
+| Working prototype with illustrative seeded data | Current |
+| Pilot with real enterprise operational data | Future |
+| Enterprise integration (SSO, live ERP/POS connectors) | Future |
+| Scaled continuous learning and cross-tenant memory | Future |
+
+---
+
+## Risks and Mitigations
+
+| Risk | Mitigation |
+|---|---|
+| Data conflicts and source disagreement | Explicit multi-source reconciliation with confidence penalties |
+| Uncertainty and overconfidence | Confidence evaluation and explicit abstention triggers |
+| Unsafe or infeasible actions | Server-side simulation, safety guardrails, and second-order impact analysis |
+| Unauthorized action execution | Backend-enforced decision rights and role-based approval limits |
+| AI failure or unavailability | Deterministic quantitative reasoning layer with graceful fallback |
+| AI cost and latency growth | Governed routing, semantic caching, and metered LLM usage |
+
+---
+
+## Running Locally
+
+**Prerequisites:** Docker Desktop and Git.
+
+```bash
+docker compose up -d --build
 ```
 
-Validated baseline during development:
-
-```text
-12 frontend tests passed
-typecheck passed
-production build passed
+```bash
+docker compose ps
 ```
 
-### Backend
+- **Frontend:** http://localhost:5173
+- **API Documentation:** http://localhost:8000/docs
 
-Inside the Docker API environment:
+---
 
-```powershell
-docker compose exec -w /srv/app api sh -c "PYTHONPATH=/srv/app pytest -q"
-```
+## Demo Personas
 
-Validated PostgreSQL baseline:
+Prototype demo credentials only — not production credentials.
 
-```text
-145 passed
-0 failed
-0 errors
-```
+**Password:** `ReasonFlow#2026`
 
-The backend test database uses PostgreSQL + pgvector, not SQLite.
+| Persona | Email |
+|---|---|
+| Analyst | `meera.analyst@apexfoods.example` |
+| Executive | `priya.ceo@apexfoods.example` |
+| KPI Owner | `vikram.owner@apexfoods.example` |
+| Supply Chain | `rahul.sc@apexfoods.example` |
 
-## Product Validation
+---
 
-The project has been validated against the locked AC1–AC26 specification.
+## Validation
 
-Key areas include:
+The prototype is backed by automated frontend and backend validation.
 
-- KPI governance
-- heterogeneous source disagreement
-- reconciliation
-- materiality
-- deterministic reasoning
-- competing hypotheses
-- evidence lineage
-- abstention
-- persona entitlements
-- decision rights
-- structured recommendations
-- server-side simulation
-- human approval
-- outcomes
-- feedback
-- memory
-- telemetry
-- scenarios
-- guardrails
-- second-order impacts
-- collisions
-- portfolio
-- governed contract evolution
-- LLM routing
-- pgvector memory
-- semantic cache isolation
-
-See:
-
-```text
-docs/FINAL_ACCEPTANCE_QA.md
-final_acceptance_results.json
-```
-
-for current acceptance evidence.
-
-## Design & UX
-
-ReasonFlow uses a premium enterprise decision-intelligence visual language rather than a generic SaaS dashboard.
-
-Design goals:
-
-- deep near-black/ink canvas
-- layered charcoal surfaces
-- restrained gold/amber primary accent
-- emerald / amber / rose semantic states
-- indigo/violet for reasoning/AI states
-- dense information hierarchy
-- fine borders
-- strong typography
-- compact metadata
-- purposeful motion
-- responsive desktop-first layouts
-
-## Core Product Principles
-
-### Backend is the source of truth
-
-The frontend must never fabricate business truth.
-
-### Real interaction
-
-A successful action follows:
-
-```text
-UI event
-→ API request
-→ backend computation/mutation
-→ persistence
-→ response/SSE
-→ UI update
-```
-
-### Human governance
-
-AI can recommend, simulate, explain, and route, but governed decisions remain under explicit human authority.
-
-### Deterministic numeric truth
-
-LLM usage must not silently alter deterministic numeric conclusions.
-
-### Abstention is a feature
-
-When evidence or confidence is insufficient, the system should clearly abstain rather than manufacture certainty.
-
-### Learning is governed
-
-Feedback can influence future reasoning, but contract changes require governed review and merge.
-
-## Data & Memory
-
-The project uses deterministic seed fabric rather than an external Kaggle-style dataset.
-
-Seed definitions live under:
-
-```text
-backend/app/seed/
-```
-
-Persistent historical memory lives in:
-
-```text
-public.historical_cases
-```
-
-with a PostgreSQL `vector(256)` embedding field for similarity retrieval.
-
-This means the prototype contains real persisted business inputs and generated artifacts rather than UI-only fake output.
-
-## Current Development State
-
-The project is at the final validation / handoff stage.
-
-The core implementation, data fabric, PostgreSQL layer, deterministic reasoning pipeline, governance, memory, telemetry, and frontend have been extensively tested.
-
-Recent runtime debugging identified frontend integration issues involving stale GET caching, a scenario response-envelope mismatch, and PostgreSQL reset lock contention. The fixes are documented in `ROOT_CAUSE_REPORT.md` and should be validated against a freshly built Docker runtime before treating the browser acceptance state as final.
-
-## Continuing Development
-
-Before changing the project:
-
-1. Read the product specification and architecture documents.
-2. Preserve the S1–S12 architecture.
-3. Prefer small, isolated changes.
-4. Validate backend behavior before relying on UI tests.
-5. Verify real browser flows for interactive changes.
-6. Never replace backend truth with hardcoded frontend outputs.
-7. Keep PostgreSQL + pgvector + Redis as the canonical stack.
-
-## License
-
-Add the intended project/competition license here before public distribution.
+Detailed acceptance evidence is documented in:
+`docs/FINAL_ACCEPTANCE_QA.md`

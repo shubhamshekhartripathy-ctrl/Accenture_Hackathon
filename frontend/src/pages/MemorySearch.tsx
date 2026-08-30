@@ -1,6 +1,6 @@
 import React from "react";
 import { api } from "@/api/client";
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, TechnicalDetails } from "@/components/ui";
 
 interface MemoryHit {
   id: string; title: string; period_label: string; kpi_code: string; action_taken: string;
@@ -35,7 +35,7 @@ export function MemorySearch() {
             {out.results.map((m) => (
               <div key={m.id} className="rounded border border-line bg-ink-950/60 px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="num text-[11px] text-gold">similarity {m.similarity.toFixed(2)}</span>
+                  <span className="num text-[11px] text-gold">Similarity score: {m.similarity.toFixed(2)}</span>
                   <span className="text-[12.5px] font-medium text-txt-primary">{m.title}</span>
                   <span className="num text-[11px] text-txt-muted">{m.period_label}</span>
                   <Chip tone={m.within_band ? "pass" : "fail"}>{m.outcome_rs >= 0 ? "+" : ""}₹{(m.outcome_rs / 1e6).toFixed(1)}M</Chip>
@@ -45,9 +45,16 @@ export function MemorySearch() {
               </div>
             ))}
             {out.withheld_by_entitlement > 0 && (
-              <p className="num text-[10.5px] text-warn">{out.withheld_by_entitlement} case(s) withheld by entitlement</p>
+              <p className="num text-[10.5px] text-warn">{out.withheld_by_entitlement} hidden results (withheld by your permissions)</p>
             )}
-            <p className="num text-[10px] text-txt-muted/70">{out.degraded_note} · method: {out.method_label}</p>
+            {out.degraded_note && (
+              <p className="num text-[10.5px] text-warn">Offline Search Mode Active (Using deterministic fallback)</p>
+            )}
+            <TechnicalDetails title="Search Algorithm Specs">
+              <p>Method: {out.method_label}</p>
+              <p>Algorithmically blended similarity metric applied.</p>
+              {out.degraded_note && <p>Raw diagnostic: {out.degraded_note}</p>}
+            </TechnicalDetails>
           </div>
         )}
         {!out && !busy && <p className="mt-2 text-[12px] text-txt-muted">Search is entitlement-filtered with a written similarity explanation — never a black box.</p>}

@@ -3,7 +3,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "@/api/client";
 import { getSession } from "@/auth/store";
-import { Card, Chip, EmptyState, ErrorState, Skeleton, statusTone } from "@/components/ui";
+import { Card, Chip, EmptyState, ErrorState, Skeleton, statusTone, TechnicalDetails } from "@/components/ui";
+import { formatIdentifier } from "@/utils/formatters";
 import type { QueueEntry } from "@/api/types";
 
 const inr = (v: number | null) =>
@@ -100,7 +101,7 @@ export function Overview() {
               onClick={() => navigate(`/kpis/${e.kpi_id}`)}
               className="flex w-full items-center justify-between gap-3 rounded border border-line bg-ink-850 px-3 py-2 text-left transition hover:border-gold/40"
             >
-              <span className="text-[13px] text-txt-primary">{e.kpi_name}</span>
+              <span className="text-[13px] text-txt-primary">{formatIdentifier(e.kpi_name)}</span>
               <span className="flex items-center gap-2">
                 <span className="num text-[12px] text-txt-muted">
                   {e.current_value.toFixed(2)} {e.unit} · wide CI [{e.ci[0].toFixed(1)}, {e.ci[1].toFixed(1)}]
@@ -183,18 +184,17 @@ function QueueCard({
         <button onClick={onOpen} className="min-w-0 flex-1 text-left">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`truncate ${dominant ? "text-[15px]" : "text-[13.5px]"} font-semibold text-txt-primary`}>
-              {entry.kpi_name}
+              {formatIdentifier(entry.kpi_name)}
             </span>
             <Chip tone={statusTone(entry.band)}>{entry.band}</Chip>
             {entry.contract_status === "CONFLICTED" && <Chip tone="fail">INPUTS CONFLICT</Chip>}
             {entry.investigation_id && <Chip tone="info">{entry.workflow_state}</Chip>}
           </div>
           <p className="num mt-1 text-[12px] text-txt-muted">
-            {entry.current_value.toFixed(1)} {entry.unit} vs baseline {entry.baseline.toFixed(1)} ·{" "}
+            {entry.current_value.toFixed(1)} {entry.unit} vs expected baseline {entry.baseline.toFixed(1)} ·{" "}
             <span className={entry.deviation_pct < 0 ? "text-fail" : "text-pass"}>
-              {entry.deviation_pct.toFixed(1)}%
-            </span>{" "}
-            · {entry.robust_z.toFixed(1)}σ · method {entry.detection_method} v{entry.model_version}
+              {entry.deviation_pct.toFixed(1)}% deviation
+            </span>
             {entry.reliability != null && <> · reliability {entry.reliability.toFixed(2)}</>}
           </p>
         </button>
@@ -215,23 +215,33 @@ function QueueCard({
       </div>
       {expanded && (
         <div className="border-t border-line bg-ink-950/60 px-4 py-3">
-          <p className="mb-2 font-mono text-[11.5px] text-txt-muted">{String(a.formula ?? "")}</p>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[12px] md:grid-cols-4">
-            <Arith k="Significance" v={String(a.significance ?? "—")} note="clamp((max(z,6a)−2)/4)" />
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[12px] md:grid-cols-4">
             <Arith k="Deviation" v={`${entry.deviation_pct.toFixed(2)}%`} />
-            <Arith k="Exposure/pt" v={inr(Number(a.exposure_rs_per_point ?? 0))} />
             <Arith k="Exposure" v={inr(Number(a.exposure_rs ?? 0))} />
-            <Arith k="Strategic wt" v={String(a.strategic_weight ?? "—")} />
-            <Arith k="Margin wt" v={String(a.margin_weight ?? "—")} />
-            <Arith k="Impact norm" v={String(a.impact_norm ?? "—")} note="clamp(log1p(impact)/10)" />
-            <Arith k="Score" v={String(a.score ?? "—")} />
+            <Arith k="Exposure/pt" v={inr(Number(a.exposure_rs_per_point ?? 0))} />
+            <Arith k="Significance" v={String(a.significance ?? "—")} />
           </div>
+          
           {Boolean(a.floored) && (
             <p className="mt-2 text-[11.5px] text-warn">
-              Raw score landed in {String(a.raw_band)} — governance floor "{String(a.floor_band)}" applied
-              (watch-list KPI; recorded honestly).
+              Governance policy elevated severity to "{String(a.floor_band)}" (Raw score: {String(a.raw_band)}).
             </p>
           )}
+
+          <TechnicalDetails title="Technical Triage & Detection">
+            <div className="space-y-1">
+              <p>Method: {entry.detection_method} (v{entry.model_version})</p>
+              <p>Statistical Deviation (robust_z): {entry.robust_z.toFixed(2)}σ</p>
+              <p>Score Formula: {String(a.formula ?? "")}</p>
+              <p>Significance Math: clamp((max(z,6a)−2)/4)</p>
+              <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-1 md:grid-cols-4">
+                <Arith k="Strategic wt" v={String(a.strategic_weight ?? "—")} />
+                <Arith k="Margin wt" v={String(a.margin_weight ?? "—")} />
+                <Arith k="Impact norm" v={String(a.impact_norm ?? "—")} note="clamp(log1p(impact)/10)" />
+                <Arith k="Final Score" v={String(a.score ?? "—")} />
+              </div>
+            </div>
+          </TechnicalDetails>
         </div>
       )}
     </div>

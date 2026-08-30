@@ -1,7 +1,8 @@
 import React from "react";
 import { api, ApiError } from "@/api/client";
 import { getSession } from "@/auth/store";
-import { Card, Chip } from "@/components/ui";
+import { Card, Chip, TechnicalDetails } from "@/components/ui";
+import { formatCertainty, formatRightsVerdict, getRightsExplanation } from "@/utils/formatters";
 import type { Investigation, SecondOrderEffect, Collision, DecisionOption } from "@/api/types";
 
 export function CaseFileDecisions({ kpiId }: { kpiId: string }) {
@@ -111,7 +112,7 @@ function OptionsPanel({ inv }: { inv: Investigation }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[13px] font-semibold text-txt-primary">{o.code.split("_")[0]} · {o.lever.replace(/_/g, " ")}</span>
               <Chip tone={o.guardrail_status === "PASS" ? "pass" : "fail"}>{o.guardrail_status === "PASS" ? "guardrails PASS" : o.guardrail_status}</Chip>
-              {o.rights_verdict && <Chip tone={o.rights_verdict === "AUTHORIZED" ? "pass" : "warn"}>{o.rights_verdict}</Chip>}
+              {o.rights_verdict && <Chip tone={o.rights_verdict === "AUTHORIZED" ? "pass" : "warn"} title={getRightsExplanation(o.rights_verdict)}>{formatRightsVerdict(o.rights_verdict)}</Chip>}
               {o.decision_health && <Chip tone={o.decision_health === "BETTER" ? "gold" : "fail"}>health {o.decision_health}</Chip>}
               {o.record && <Chip tone={o.record.status === "APPROVED" ? "pass" : "info"}>{o.record.status}</Chip>}
             </div>
@@ -247,29 +248,43 @@ function SecondOrderChain({ effects, rule }: { effects: SecondOrderEffect[]; rul
   return (
     <div className="mt-1.5 border-t border-line pt-1.5">
       <button onClick={() => setOpen(!open)} className="text-[11px] font-medium text-gold/90 hover:text-gold">
-        {open ? "▾" : "▸"} Second-order impacts · graph_elasticity ({effects.length} downstream)
+        {open ? "▾" : "▸"} Secondary Impacts ({effects.length} downstream)
       </button>
       {open && (
-        <div className="mt-1 space-y-1">
-          <p className="text-[10px] text-txt-muted">{rule} — bounds widen per hop</p>
-          {effects.map((e, i) => (
-            <div key={i} className="rounded border border-line bg-ink-950/60 px-2 py-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className={`num text-[11.5px] ${e.effect_pct >= 0 ? "text-pass" : "text-fail"}`}>{e.effect_display}</span>
-                <span className="text-[11.5px] text-txt-secondary">{e.kpi.replace(/_/g, " ")}</span>
-                {e.node_kind === "DERIVED_IMPACT" && <Chip tone="neutral">derived</Chip>}
-                <span className="num text-[10px] text-txt-muted">conf {e.confidence.toFixed(2)} · [{e.bounds_pct[0].toFixed(1)}, {e.bounds_pct[1].toFixed(1)}]</span>
+        <div className="mt-1 space-y-2">
+          <p className="text-[11px] text-txt-secondary">
+            Estimated downstream effects on related metrics. Confidence decreases for indirect impacts.
+          </p>
+          <div className="space-y-1">
+            {effects.map((e, i) => (
+              <div key={i} className="rounded border border-line bg-ink-950/60 px-2 py-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`num text-[11.5px] font-medium ${e.effect_pct >= 0 ? "text-pass" : "text-fail"}`}>{e.effect_display}</span>
+                  <span className="text-[11.5px] text-txt-primary">{e.kpi.replace(/_/g, " ")}</span>
+                  {e.node_kind === "DERIVED_IMPACT" && <Chip tone="neutral">derived</Chip>}
+                </div>
+                
+                <TechnicalDetails title="Technical Propagation">
+                  <div className="space-y-1">
+                    <p>conf {e.confidence.toFixed(2)} · bounds [{e.bounds_pct[0].toFixed(1)}, {e.bounds_pct[1].toFixed(1)}]</p>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {e.dependency_path.map((n, j) => (
+                        <React.Fragment key={j}>
+                          {j > 0 && <span className="text-gold/70">→</span>}
+                          <span className="rounded border border-line/50 px-1 py-px">{n}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                </TechnicalDetails>
               </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-1">
-                {e.dependency_path.map((n, j) => (
-                  <React.Fragment key={j}>
-                    {j > 0 && <span className="text-[9px] text-gold/70">→</span>}
-                    <span className="rounded border border-line px-1 py-px font-mono text-[9.5px] text-txt-muted">{n}</span>
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <TechnicalDetails title="Methodology">
+            <p>Method: graph_elasticity</p>
+            <p>Rule: {rule} (WIDEN_PER_HOP = 0.20)</p>
+            <p>Internal equation: effect = parent * elasticity</p>
+          </TechnicalDetails>
         </div>
       )}
     </div>

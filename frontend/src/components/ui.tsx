@@ -189,3 +189,30 @@ export function Tabs({
     </div>
   );
 }
+
+export function TechnicalDetails({
+  title = "Technical Details",
+  children,
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="mt-2 rounded border border-line/50 bg-ink-950/30">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-[11px] text-txt-muted transition hover:text-txt-secondary"
+      >
+        <span className="font-mono">{open ? "[-]" : "[+]"}</span>
+        <span className="uppercase tracking-widest">{title}</span>
+      </button>
+      {open && (
+        <div className="border-t border-line/50 px-3 py-2 text-[11px] font-mono text-txt-muted/80">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
